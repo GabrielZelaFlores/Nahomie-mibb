@@ -204,12 +204,12 @@
         .flip-sparkle { position: absolute; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 20; animation: sparkleBurst 0.7s ease-out forwards; }
         @keyframes sparkleBurst { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); } }
 
-        /* ===== GALERÍA ===== */
+        /* ===== GALERÍA (SIN 3D TILT) ===== */
         #gallery { background: linear-gradient(180deg, var(--light) 0%, var(--cream) 100%); flex-direction: column; gap: 1.5rem; }
         .gallery-title { font-family: 'Pacifico', cursive; font-size: clamp(1.6rem, 5vw, 2.3rem); color: var(--hot); text-align: center; }
-        .polaroid-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 700px; width: 100%; perspective: 1000px; }
-        .polaroid { background: white; padding: 8px 8px 44px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: rotate(var(--rot, 0deg)); transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), box-shadow 0.3s; cursor: pointer; position: relative; transform-style: preserve-3d; will-change: transform; }
-        .polaroid:hover { z-index: 5; box-shadow: 0 8px 30px rgba(0,0,0,0.14); }
+        .polaroid-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 700px; width: 100%; }
+        .polaroid { background: white; padding: 8px 8px 44px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: rotate(var(--rot, 0deg)); transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), box-shadow 0.3s; cursor: pointer; position: relative; }
+        .polaroid:hover { transform: rotate(0deg) scale(1.06); z-index: 5; box-shadow: 0 8px 30px rgba(0,0,0,0.14); }
         .polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 2px; background: #FFE4EC; display: block; pointer-events: none; }
         .polaroid .caption { position: absolute; bottom: 8px; left: 8px; right: 8px; font-family: 'Pacifico', cursive; font-size: 0.7rem; color: var(--hot); text-align: center; pointer-events: none; }
 
@@ -258,16 +258,8 @@
             border: 2px solid var(--blush);
         }
         #musicPlayer:hover { transform: scale(1.1); }
-        #musicPlayer .vinyl {
-            width: 30px; height: 30px; border-radius: 50%;
-            background: conic-gradient(from 0deg, #333, #555, #333, #555, #333);
-            position: relative; transition: transform 0.3s;
-        }
-        #musicPlayer .vinyl::after {
-            content: ''; position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); width: 10px; height: 10px;
-            background: var(--rose); border-radius: 50%;
-        }
+        #musicPlayer .vinyl { width: 30px; height: 30px; border-radius: 50%; background: conic-gradient(from 0deg, #333, #555, #333, #555, #333); position: relative; transition: transform 0.3s; }
+        #musicPlayer .vinyl::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background: var(--rose); border-radius: 50%; }
         #musicPlayer.playing .vinyl { animation: spin 2s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -596,39 +588,13 @@
         });
         function createReasonSparkles(card) { const r=card.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2; const cols=['#FF6B9D','#FFD54F','#FF4081','#FFB3D1','#E91E76','#fff']; for(let i=0;i<12;i++){const s=document.createElement('div'),a=(Math.PI*2*i)/12,d=20+Math.random()*35,sz=Math.random()*5+3;s.className='flip-sparkle';s.style.cssText=`left:${cx}px;top:${cy}px;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px;position:fixed;z-index:999;`;document.body.appendChild(s);setTimeout(()=>s.remove(),700);} }
 
-        // ===== GALERÍA CON 3D TILT =====
+        // ===== GALERÍA (SIN 3D) =====
         const polaroidGrid = document.getElementById('polaroidGrid');
         const rotations = [-3, 2.5, -1.5, 3, -2, 1.5];
-        const polaroids = [];
         galleryData.forEach((p,i) => {
             const d = document.createElement('div'); d.className='polaroid'; d.style.setProperty('--rot', `${rotations[i]}deg`);
             d.innerHTML = `<img src="${p.img}" alt="${p.caption}" loading="lazy"><span class="caption">${p.caption}</span>`;
-            polaroidGrid.appendChild(d); polaroids.push(d);
-        });
-
-        // 3D Tilt para galería
-        if (window.DeviceOrientationEvent) {
-            window.addEventListener('deviceorientation', e => {
-                const x = Math.max(-1, Math.min(1, e.gamma / 45));
-                const y = Math.max(-1, Math.min(1, (e.beta - 45) / 45));
-                polaroids.forEach((p, i) => {
-                    const rot = rotations[i];
-                    p.style.transform = `rotate(${rot}deg) perspective(600px) rotateY(${x*15}deg) rotateX(${-y*15}deg)`;
-                });
-            });
-        }
-        // Desktop mouse tilt
-        document.getElementById('gallery').addEventListener('mousemove', e => {
-            const rect = polaroidGrid.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width - 0.5;
-            const y = (e.clientY - rect.top) / rect.height - 0.5;
-            polaroids.forEach((p, i) => {
-                const rot = rotations[i];
-                p.style.transform = `rotate(${rot}deg) perspective(600px) rotateY(${x*20}deg) rotateX(${-y*20}deg)`;
-            });
-        });
-        document.getElementById('gallery').addEventListener('mouseleave', () => {
-            polaroids.forEach((p, i) => { p.style.transform = `rotate(${rotations[i]}deg)`; });
+            polaroidGrid.appendChild(d);
         });
 
         // ===== CANVAS FINAL =====
